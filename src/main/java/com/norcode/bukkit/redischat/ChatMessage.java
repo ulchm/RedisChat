@@ -1,18 +1,17 @@
 package com.norcode.bukkit.redischat;
 
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.libs.com.google.gson.Gson;
 import org.bukkit.entity.Player;
 
 public class ChatMessage {
 
     private Player sender;
-    private Location senderLocation;
+    private String senderLocation;
     private String message;
     private String format;
     private long sentAt;
 
-    public ChatMessage(Player sender, Location senderLocation, String message, String format, long sentAt) {
+    public ChatMessage(Player sender, String senderLocation, String message, String format, long sentAt) {
         this.sender = sender;
         this.senderLocation = senderLocation;
         this.message = message;
@@ -24,7 +23,7 @@ public class ChatMessage {
         return sender;
     }
 
-    public Location getSenderLocation() {
+    public String getSenderLocation() {
         return senderLocation;
     }
 
@@ -38,5 +37,25 @@ public class ChatMessage {
 
     public long getSentAt() {
         return sentAt;
+    }
+
+    public void setSender(Player sender) {
+        this.sender = sender;
+    }
+
+    public void setSenderLocation(String senderLocation) {
+        this.senderLocation = senderLocation;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public void setSentAt(long sentAt) {
+        this.sentAt = sentAt;
     }
 }

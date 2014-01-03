@@ -34,7 +34,8 @@ public class RedisChat extends JavaPlugin implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void asyncPlayerChatEvent(AsyncPlayerChatEvent event) {
-        ChatMessage chatMessage = new ChatMessage(event.getPlayer(), event.getPlayer().getLocation(), event.getMessage(), event.getFormat(), System.currentTimeMillis());
+        String location = event.getPlayer().getLocation().getX() + "," + event.getPlayer().getLocation().getY() + "," + event.getPlayer().getLocation().getZ();
+        ChatMessage chatMessage = new ChatMessage(event.getPlayer(), location, event.getMessage(), event.getFormat(), System.currentTimeMillis());
         Jedis jedis = jedisPool.getResource();
         jedis.publish("chat:all", gson.toJson(chatMessage));
         jedisPool.returnResource(jedis);
