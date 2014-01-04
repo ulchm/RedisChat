@@ -18,6 +18,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.v1_7_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -176,6 +177,8 @@ public class ChatRenderer extends BukkitRunnable {
 			case PRIVATE:
 				Player recip = plugin.getServer().getPlayerExact(msg.getDestination().substring(1));
 				Player sender = plugin.getServer().getPlayerExact(msg.getSender());
+				recip.setMetadata("pm-reply-to", new FixedMetadataValue(plugin, sender.getName()));
+				sender.setMetadata("pm-reply-to", new FixedMetadataValue(plugin, recip.getName()));
 				if (recip != null) {
 					packet = new PacketPlayOutChat(formatIncomingPM(msg), true);
 					send(recip, packet);
@@ -190,17 +193,17 @@ public class ChatRenderer extends BukkitRunnable {
 	private IChatBaseComponent formatIncomingPM(ChatMessage msg) {
 		return new Text("")
 				.append(ChatColor.GRAY + "[")
-				.append(formatSender(msg.getDestination().substring(1)))
+				.append(formatSender(msg.getSender()))
 				.append(ChatColor.DARK_AQUA + " ▶ " + ChatColor.GRAY + "You] ")
-				.append(ChatColor.ITALIC + msg.getMessage());
+				.append(msg.getMessage());
 	}
 
 	private IChatBaseComponent formatOutgoingPM(ChatMessage msg) {
 		return new Text("")
 				.append(ChatColor.GRAY + "[You" + ChatColor.DARK_AQUA + " ▶ ")
-				.append(formatSender(msg.getSender()))
+				.append(formatSender(msg.getDestination().substring(1)))
 				.append(ChatColor.GRAY + "] ")
-				.append(ChatColor.ITALIC + msg.getMessage());
+				.append(msg.getMessage());
 
 	}
 }

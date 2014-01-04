@@ -12,10 +12,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.craftbukkit.libs.com.google.gson.Gson;
 import org.bukkit.craftbukkit.v1_7_R1.entity.CraftPlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerChatTabCompleteEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -75,7 +77,6 @@ public class RedisChat extends JavaPlugin implements Listener {
 
 			@Override
 			public void run() {
-				Jedis jedis = jedisPool.getResource();
 				// First check for 'channel switches' which aren't real messages.
 				if (event.getMessage().startsWith("#") && !event.getMessage().contains(" ")) {
 					String channel = event.getMessage().substring(1).toUpperCase();
@@ -93,8 +94,43 @@ public class RedisChat extends JavaPlugin implements Listener {
 				// it could actually be a local message or PM.
 				String channel = null;
 				if (event.getMessage().startsWith("@")) {
-					String[] parts = event.getMessage().split(" ", 2);
-					channel = "%" + parts[0].substring(1);
+					String[] parts = event.getMessage().substring(1).split(" ", 2);
+					Player target = null;
+					if (parts[0].trim().equals("")) {
+						if (!event.getPlayer().hasMetadata("pm-reply-to")) {
+							send(event.getPlayer(), ChatColor.RED + "You do not have an ongoing conversation.");
+							return;
+						}
+						String targetName = event.getPlayer().getMetadata("pm-reply-to").get(0).asString();
+						target = Bukkit.getPlayerExact(targetName);
+						if (target == null) {
+							send(event.getPlayer(), ChatColor.RED + targetName + " is no longer online.");
+							return;
+						}
+					} else {
+						List<Player> matches = new ArrayList<Player>();
+						for (Player p: getServer().getOnlinePlayers()) {
+							if (event.getPlayer().canSee(p) && p.getName().startsWith(parts[0])) {
+								matches.add(p);
+							}
+						}
+						if (matches.size() == 0) {
+							send(event.getPlayer(), ChatColor.RED + "Unknown Player: " + parts[0]);
+							return;
+						} else if (matches.size() > 1) {
+							send(event.getPlayer(), ChatColor.RED + "'"+ parts[0] + "' matches more than 1 player!");
+							return;
+						}
+						target = matches.get(0);
+						if (target.getName().equals(event.getPlayer().getName())) {
+							send(event.getPlayer(), ChatColor.BOLD + " * " + ChatColor.RESET + "" +
+									ChatColor.GOLD + "" + ChatColor.ITALIC + "You mumble to yourself, but you can't quite understand what you're trying to say.");
+							return;
+						}
+
+					}
+					event.getPlayer().setMetadata("pm-reply-to", new FixedMetadataValue(RedisChat.this, target.getName()));
+					channel = "%" + target.getName();
 					event.setMessage(parts[1]);
 				} else {
 					Channel c = channelManager.getFocusedChannel(event.getPlayer());
@@ -102,9 +138,10 @@ public class RedisChat extends JavaPlugin implements Listener {
 						event.getPlayer().sendMessage(ChatColor.RED + "You are not in any channels!");
 						return;
 					}
-					channel = c.getName();
+					channel = "#" + c.getName();
 				}
 				ChatMessage chatMessage = new ChatMessage(event.getPlayer().getName(), channel, event.getMessage(), System.currentTimeMillis());
+				Jedis jedis = jedisPool.getResource();
 				jedis.publish("chat:" + channel, gson.toJson(chatMessage));
 				jedisPool.returnResource(jedis);
 			}
@@ -141,6 +178,28 @@ public class RedisChat extends JavaPlugin implements Listener {
 			c.getMembers().remove(event.getPlayer().getName());
 		}
 	}
+
+	@EventHandler
+	public void onPlayerTabComplete(PlayerChatTabCompleteEvent event) {
+		List<String> results = new ArrayList<String>();
+		if (event.getLastToken().startsWith("@")) {
+			for (Player p: getServer().getOnlinePlayers()) {
+				if (p.getName().toLowerCase().startsWith(event.getLastToken().substring(1).toLowerCase())
+						&& !event.getPlayer().getName().equals(p.getName()) && event.getPlayer().canSee(p)) {
+					results.add("@" + p.getName());
+				}
+			}
+		} else if (event.getLastToken().startsWith("#") && event.getChatMessage().equals(event.getLastToken())) {
+			for (Channel c: channelManager.getPlayerChannels(event.getPlayer())) {
+				if (c.getName().toLowerCase().startsWith(event.getLastToken().substring(1).toLowerCase())) {
+					results.add("#" + c.getName());
+				}
+			}
+		}
+		event.getTabCompletions().clear();
+		event.getTabCompletions().addAll(results);
+	}
+
 
 	public ChatRenderer getChatRenderer() {
 		return chatRenderer;
