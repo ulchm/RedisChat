@@ -1,6 +1,7 @@
 package com.norcode.bukkit.redischat;
 
 import com.norcode.bukkit.playerid.PlayerID;
+import com.norcode.bukkit.redischat.command.ChannelCommand;
 import com.norcode.bukkit.redischat.listeners.PubSubListener;
 import net.minecraft.server.v1_7_R1.ChatBaseComponent;
 import net.minecraft.server.v1_7_R1.IChatBaseComponent;
@@ -35,13 +36,15 @@ public class RedisChat extends JavaPlugin implements Listener {
 	private Gson gson = new Gson();
 	private ChatRenderer chatRenderer;
 	private ChannelManager channelManager;
-
+	private ChannelCommand channelCommand;
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
+
 		chatRenderer = new ChatRenderer(this);
 		chatRenderer.runTaskTimer(this, 1, 1);
 		channelManager = new ChannelManager(this);
+		channelCommand = new ChannelCommand(this);
 		Thread listenerThread = new Thread(pubSubListener);
 		listenerThread.start();
 	}
