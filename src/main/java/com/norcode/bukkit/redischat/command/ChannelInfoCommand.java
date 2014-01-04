@@ -40,12 +40,11 @@ public class ChannelInfoCommand extends BaseCommand {
 		commandSender.sendMessage("Chat Permission: " + channel.getChatPermission() == null ? "none" : channel.getChatPermission());
 
 		String color = channel.getNameColor();
-		ChatColor clr = ChatColor.valueOf(color);
+		ChatColor clr = ChatColor.getByChar(color.charAt(1));
 		commandSender.sendMessage("Channel Name Color: " + clr + clr.name());
 		color = channel.getTextColor();
-		clr = ChatColor.valueOf(color);
+		clr = ChatColor.getByChar(color.charAt(1));
 		commandSender.sendMessage("Text Color: " + clr + clr.name());
-
 		String members = "";
 		for (String s: channel.getMembers()) {
 			members += Bukkit.getPlayerExact(s).getDisplayName() + ", ";

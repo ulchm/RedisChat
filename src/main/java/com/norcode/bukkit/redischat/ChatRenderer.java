@@ -78,22 +78,17 @@ public class ChatRenderer extends BukkitRunnable {
 		NBTTagList lore = new NBTTagList();
 		lore.add(new NBTTagString(rankColor + rank));
 		baseTag.getCompound("tag").getCompound("display").set("Lore", lore);
-		return new Text(playerName)
+		return new Text(rankColor + playerName)
 				.setHover(HoverAction.SHOW_ITEM, new ChatComponentText(baseTag.toString()))
 				.setClick(ClickAction.SUGGEST_COMMAND, "/msg " + playerName);
 	}
 
 	private String getGroupColor(String group) {
-		if (group.equalsIgnoreCase("admin")) {
-			return ChatColor.GOLD.toString();
-		} else if (group.equalsIgnoreCase("mod")) {
-			return ChatColor.LIGHT_PURPLE.toString();
-		} else if (group.equalsIgnoreCase("vip")) {
-			return ChatColor.BLUE.toString();
-		} else if (group.equalsIgnoreCase("member")) {
-			return ChatColor.GREEN.toString();
+		String s = ChatColor.translateAlternateColorCodes('&', vaultChat.getGroupPrefix((String) null, group));
+		if (s == null) {
+			s = "";
 		}
-		return ChatColor.WHITE.toString();
+		return s;
 	}
 
 	private String getPlayerRank(Player p) {
@@ -118,14 +113,17 @@ public class ChatRenderer extends BukkitRunnable {
 			String nameColor = c.getNameColor();
 			if (isYelling) nameColor += ChatColor.BOLD.toString();
 			textColor = c.getTextColor();
-
 			prefix.append(ChatColor.GRAY + "[" + nameColor + c.getName() + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		case BROADCAST:
 			prefix.append(ChatColor.GRAY + "[" + ChatColor.RED + "!" + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		}
-		prefix.append(ChatColor.DARK_GRAY + "<").append(formatPlayerName(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(new Text(textColor + msg.getMessage()));
+		Text msgText = new Text(msg.getMessage());
+		if (textColor.length() == 2) {
+			msgText.setColor(ChatColor.getByChar(textColor.charAt(1)));
+		}
+		prefix.append(ChatColor.DARK_GRAY + "<").append(formatPlayerName(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(msgText);
 		PacketPlayOutChat packet = new PacketPlayOutChat(prefix, true);
 		return packet;
 	}
