@@ -1,5 +1,6 @@
 package com.norcode.bukkit.redischat;
 
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import redis.clients.jedis.Jedis;
@@ -28,6 +29,13 @@ public class ChannelManager {
 		Map<String, String> channelData = j.hgetAll("channels");
 		for (Map.Entry<String, String> entry: channelData.entrySet()) {
 			channels.put(entry.getKey().toLowerCase(), plugin.getGson().fromJson(entry.getValue(), Channel.class));
+		}
+		if (channels.isEmpty()) {
+			// Setup a default channel.
+			Channel c = new Channel();
+			c.setName("G");
+			c.setNameColor(ChatColor.YELLOW.toString());
+			saveChannel(c);
 		}
 	}
 
@@ -98,6 +106,7 @@ public class ChannelManager {
 
 		LinkedList<String> pc = (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
 		pc.add(0, channel.getName().toLowerCase());
+		channel.getMembers().add(player.getName());
 		return true;
 	}
 

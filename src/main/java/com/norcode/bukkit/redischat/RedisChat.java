@@ -8,7 +8,6 @@ import net.minecraft.server.v1_7_R1.IChatBaseComponent;
 import net.minecraft.server.v1_7_R1.PacketPlayOutChat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.craftbukkit.libs.com.google.gson.Gson;
@@ -19,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -26,6 +26,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public class RedisChat extends JavaPlugin implements Listener {
@@ -37,6 +38,8 @@ public class RedisChat extends JavaPlugin implements Listener {
 	private ChatRenderer chatRenderer;
 	private ChannelManager channelManager;
 	private ChannelCommand channelCommand;
+	private static boolean debugMode = true;
+
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
@@ -49,6 +52,11 @@ public class RedisChat extends JavaPlugin implements Listener {
 		listenerThread.start();
 	}
 
+	public static void debug(Object o) {
+		if (debugMode) {
+			Bukkit.getLogger().info(o.toString());
+		}
+	}
 
 	@Override
 	public void onDisable() {
@@ -68,11 +76,14 @@ public class RedisChat extends JavaPlugin implements Listener {
 			@Override
 			public void run() {
 				Jedis jedis = jedisPool.getResource();
-				String channel = "G";
 				// First check for 'channel switches' which aren't real messages.
 				if (event.getMessage().startsWith("#") && !event.getMessage().contains(" ")) {
-					channel = event.getMessage().substring(1).toUpperCase();
-					channelManager.setFocusedChannel(event.getPlayer(), channel);
+					String channel = event.getMessage().substring(1).toUpperCase();
+					Channel c = channelManager.getChannel(channel);
+					if (c == null || !channelManager.setFocusedChannel(event.getPlayer(), channel)) {
+						event.getPlayer().sendMessage(ChatColor.RED + "Unknown Channel: " + channel);
+						return;
+					}
 					event.getPlayer().sendMessage(ChatColor.DARK_GRAY + "You are now chatting in #" + channel);
 					event.setCancelled(true);
 					return;
@@ -80,20 +91,18 @@ public class RedisChat extends JavaPlugin implements Listener {
 				// Now check for a message prefix and adjust the 'channel' were sending to
 				// we use 'channel' loosely here, meaning the redis channel name,
 				// it could actually be a local message or PM.
-				if (event.getMessage().startsWith("#")) {
-					String[] parts = event.getMessage().split(" ", 2);
-					channel = "#" + parts[0].substring(1).toUpperCase();
-					event.setMessage(parts[1]);
-				} else if (event.getMessage().startsWith("@")) {
+				String channel = null;
+				if (event.getMessage().startsWith("@")) {
 					String[] parts = event.getMessage().split(" ", 2);
 					channel = "%" + parts[0].substring(1);
 					event.setMessage(parts[1]);
 				} else {
-					channel = "#" + channelManager.getFocusedChannel(event.getPlayer()).getName().toLowerCase();
-					if (channel.equals("#G")) {
-						Location l = event.getPlayer().getLocation();
-						channel = "@" + l.getWorld().getName() + ";" + l.getBlockX() + ";" + l.getBlockY() + ";" + l.getBlockZ() + ";" + LOCAL_RADIUS;
+					Channel c = channelManager.getFocusedChannel(event.getPlayer());
+					if (c == null) {
+						event.getPlayer().sendMessage(ChatColor.RED + "You are not in any channels!");
+						return;
 					}
+					channel = c.getName();
 				}
 				ChatMessage chatMessage = new ChatMessage(event.getPlayer().getName(), channel, event.getMessage(), System.currentTimeMillis());
 				jedis.publish("chat:" + channel, gson.toJson(chatMessage));
@@ -106,6 +115,7 @@ public class RedisChat extends JavaPlugin implements Listener {
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		if (!event.getPlayer().hasMetadata("channel-list")) {
+			event.getPlayer().setMetadata("channel-list", new FixedMetadataValue(this, new LinkedList<String>()));
 			ConfigurationSection cfg = PlayerID.getPlayerData(getName(), event.getPlayer());
 			List<String> channels;
 			if (!cfg.contains("channel-list")) {

@@ -16,7 +16,6 @@ import net.minecraft.server.v1_7_R1.PacketPlayOutChat;
 import net.minecraft.util.org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_7_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -104,22 +103,28 @@ public class ChatRenderer extends BukkitRunnable {
 	public PacketPlayOutChat createChatPacket(ChatMessage msg) {
 		Text prefix = new Text("");
 		MessageType msgType = MessageType.fromPrefix(msg.getDestination().substring(0,1));
+		String textColor = "";
 		switch (msgType) {
 		case CHANNEL:
-			String channel = msg.getDestination().substring(1);
-			prefix.append(ChatColor.GRAY + "[" + ChatColor.YELLOW + channel + ChatColor.GRAY + "] " + ChatColor.RESET);
-			break;
-		case LOCAL:
-			prefix.append(ChatColor.GRAY + "[" + ChatColor.YELLOW + "L" + ChatColor.GRAY + "] " + ChatColor.RESET);
+			boolean isYelling = false;
+			String chanName = msg.getDestination().substring(1);
+
+			if (chanName.endsWith("!")) {
+				isYelling = true;
+				chanName = chanName.substring(0, chanName.length() - 1);
+			}
+			Channel c = plugin.getChannelManager().getChannel(chanName);
+			String nameColor = c.getNameColor();
+			if (isYelling) nameColor += ChatColor.BOLD.toString();
+			textColor = c.getTextColor();
+
+			prefix.append(ChatColor.GRAY + "[" + nameColor + c.getName() + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		case BROADCAST:
 			prefix.append(ChatColor.GRAY + "[" + ChatColor.RED + "!" + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
-		case PRIVATE:
-			prefix.append(ChatColor.GRAY + "[" + ChatColor.AQUA + "@" + ChatColor.GRAY + "] " + ChatColor.RESET);
-			break;
 		}
-		prefix.append(ChatColor.DARK_GRAY + "<").append(formatSender(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(new Text(msg.getMessage()));
+		prefix.append(ChatColor.DARK_GRAY + "<").append(formatSender(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(new Text(textColor + msg.getMessage()));
 		PacketPlayOutChat packet = new PacketPlayOutChat(prefix, true);
 		return packet;
 	}
@@ -132,45 +137,70 @@ public class ChatRenderer extends BukkitRunnable {
 	public void run() {
 		while (!messageQueue.isEmpty()) {
 			ChatMessage msg = messageQueue.poll();
+			plugin.debug(msg);
 			// check out msg.getDestination and decide who gets this, for now, everyone does.
-			PacketPlayOutChat packet = createChatPacket(msg);
 			MessageType msgType = MessageType.fromPrefix(msg.getDestination().substring(0,1));
+			PacketPlayOutChat packet;
 			switch (msgType) {
 			case BROADCAST:
+				packet = createChatPacket(msg);
 				for (Player p: plugin.getServer().getOnlinePlayers()) {
 					send(p, packet);
 				}
 				break;
 			case CHANNEL:
-				Channel chan = plugin.getChannelManager().getChannel(msg.getDestination().substring(1));
-				if (chan != null && chan.isMember(msg.getSender())) {
-					for (String name: chan.getMembers()) {
-						send(Bukkit.getPlayerExact(name), packet);
-					}
+				packet = createChatPacket(msg);
+				boolean isYelling = false;
+				String chanName = msg.getDestination().substring(1);
+				if (chanName.endsWith("!")) {
+					isYelling = true;
+					chanName = chanName.substring(0, chanName.length() - 1);
 				}
-				break;
-			case LOCAL:
-				String[] parts = msg.getDestination().substring(1).split(";");
-				World w = plugin.getServer().getWorld(parts[0]);
-				int x = Integer.parseInt(parts[1]);
-				int y = Integer.parseInt(parts[2]);
-				int z = Integer.parseInt(parts[3]);
-				int radius = Integer.parseInt(parts[4]);
-				Player sender = plugin.getServer().getPlayerExact(msg.getSender());
-				for (Player p: sender.getWorld().getPlayers()) {
-					if (p.getLocation().distance(sender.getLocation()) < radius) {
-						send(p, packet);
+				Channel chan = plugin.getChannelManager().getChannel(chanName);
+				if (chan != null && chan.isMember(msg.getSender())) {
+					Player sender = Bukkit.getPlayerExact(msg.getSender());
+					for (String memberName: chan.getMembers()) {
+						if (chan.getRadius() == -1 || isYelling) {
+							send(Bukkit.getPlayerExact(memberName), packet);
+						} else {
+							Player target = Bukkit.getPlayerExact(memberName);
+							if (target.getWorld().equals(sender.getWorld())) {
+								if (target.getLocation().distance(sender.getLocation()) < chan.getRadius()) {
+									send(target, packet);
+								}
+							}
+						}
 					}
 				}
 				break;
 			case PRIVATE:
-				String recip = msg.getDestination().substring(1);
-				Player p = plugin.getServer().getPlayerExact(recip);
-				if (p != null) {
-					send(p, packet);
+				Player recip = plugin.getServer().getPlayerExact(msg.getDestination().substring(1));
+				Player sender = plugin.getServer().getPlayerExact(msg.getSender());
+				if (recip != null) {
+					packet = new PacketPlayOutChat(formatIncomingPM(msg), true);
+					send(recip, packet);
+					PacketPlayOutChat packet2 = new PacketPlayOutChat(formatOutgoingPM(msg), true);
+					send(sender, packet2);
 				}
 				break;
 			}
 		}
+	}
+
+	private IChatBaseComponent formatIncomingPM(ChatMessage msg) {
+		return new Text("")
+				.append(ChatColor.GRAY + "[")
+				.append(formatSender(msg.getDestination().substring(1)))
+				.append(ChatColor.DARK_AQUA + " ▶ " + ChatColor.GRAY + "You] ")
+				.append(ChatColor.ITALIC + msg.getMessage());
+	}
+
+	private IChatBaseComponent formatOutgoingPM(ChatMessage msg) {
+		return new Text("")
+				.append(ChatColor.GRAY + "[You" + ChatColor.DARK_AQUA + " ▶ ")
+				.append(formatSender(msg.getSender()))
+				.append(ChatColor.GRAY + "] ")
+				.append(ChatColor.ITALIC + msg.getMessage());
+
 	}
 }

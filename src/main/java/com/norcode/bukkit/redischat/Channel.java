@@ -15,6 +15,7 @@ public class Channel {
 	private String password;
 	private String joinPermission;
 	private String chatPermission;
+	private int radius = -1;
 	private boolean listed;
 
 	public UUID getOwnerId() {
@@ -87,5 +88,13 @@ public class Channel {
 
 	public boolean isMember(String name) {
 		return members.contains(name);
+	}
+
+	public int getRadius() {
+		return radius;
+	}
+
+	public void setRadius(int radius) {
+		this.radius = radius;
 	}
 }

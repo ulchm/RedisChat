@@ -13,13 +13,13 @@ import java.util.List;
 public class ChannelSetCommand extends BaseCommand {
 	public ChannelSetCommand(RedisChat plugin) {
 		super(plugin, "set", new String[] {}, "redischat.command.channel.set", new String[] {});
-
+		registerSubcommand(new SetNameColorCommand(plugin));
 	}
 
 	public abstract static class SetCommand extends BaseCommand {
 		public SetCommand(RedisChat plugin, String name, String[] aliases, String requiredPermission, String[] help) {
 			super(plugin, name, aliases, requiredPermission, help);
-			registerSubcommand(new SetNameColorCommand(plugin));
+
 		}
 
 		@Override
@@ -35,7 +35,7 @@ public class ChannelSetCommand extends BaseCommand {
 			if (c == null) {
 				throw new CommandError("You are not currently in any channels?!?!");
 			}
-			if (!c.getOwnerId().equals(((Player) commandSender).getUniqueId()) && !((Player) commandSender).hasPermission("redischat.admin")) {
+			if (!((Player) commandSender).getUniqueId().equals(c.getOwnerId()) && !((Player) commandSender).hasPermission("redischat.admin")) {
 				throw new CommandError("You do not have permission to change that setting for this channel.");
 			}
 			onExecute((Player) commandSender, c, args);
@@ -82,6 +82,7 @@ public class ChannelSetCommand extends BaseCommand {
 
 		@Override
 		protected List<String> onTab(Player sender, Channel channel, LinkedList<String> args) {
+			plugin.debug("onTabComplete nameColor w/ " + args.peek());
 			List<String> results = new ArrayList<String>();
 			if (args.size() == 1) {
 				for (ChatColor c: ChatColor.values()) {
