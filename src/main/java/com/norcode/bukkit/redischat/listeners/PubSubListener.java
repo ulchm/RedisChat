@@ -20,7 +20,7 @@ public class PubSubListener extends JedisPubSub implements Runnable {
 	public void onPMessage(String pattern, String channel, String message) {
 		ChatMessage msg = gson.fromJson(message, ChatMessage.class);
 		msg.setDestination(channel.substring(5));
-		plugin.getChatManager().getMessageQueue().add(msg);
+		plugin.getChatRenderer().getMessageQueue().add(msg);
 	}
 
 	@Override
