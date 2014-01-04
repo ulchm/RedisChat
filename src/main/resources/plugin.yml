@@ -3,6 +3,23 @@ name: ${project.name}
 version: ${project.version}
 authors: ${project.authors}
 depend: ${project.dependencies}
+permissions:
+  redischat.admin:
+    default: op
+  redischat.command.channel:
+    default: true
+  redischat.command.msg:
+    default: true
+  redischat.command.reply:
+    default: true
+
 commands:
   channel:
     aliases: [ch, chan]
+    permission: redischat.command.channel
+  msg:
+    aliases: [tell, whisper, pm]
+    permission: redischat.command.msg
+  reply:
+    aliases: [r]
+    permission: redischat.command.reply
