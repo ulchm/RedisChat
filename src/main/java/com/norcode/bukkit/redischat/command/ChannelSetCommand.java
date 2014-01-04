@@ -2,7 +2,6 @@ package com.norcode.bukkit.redischat.command;
 
 import com.norcode.bukkit.redischat.Channel;
 import com.norcode.bukkit.redischat.RedisChat;
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -15,6 +14,13 @@ public class ChannelSetCommand extends BaseCommand {
 	public ChannelSetCommand(RedisChat plugin) {
 		super(plugin, "set", new String[] {}, "redischat.command.channel.set", new String[] {});
 		registerSubcommand(new SetNameColorCommand(plugin));
+		registerSubcommand(new SetChatPermissionCommand(plugin));
+		registerSubcommand(new SetJoinPermissionCommand(plugin));
+		registerSubcommand(new SetListedCommand(plugin));
+		registerSubcommand(new SetPasswordCommand(plugin));
+		registerSubcommand(new SetRadiusCommand(plugin));
+		registerSubcommand(new SetTextColorCommand(plugin));
+
 	}
 
 	public abstract static class SetCommand extends BaseCommand {
@@ -137,8 +143,8 @@ public class ChannelSetCommand extends BaseCommand {
         }
     }
 
-    public static class SetPassword extends SetCommand {
-        public SetPassword(RedisChat plugin) {
+    public static class SetPasswordCommand extends SetCommand {
+        public SetPasswordCommand(RedisChat plugin) {
             super(plugin, "password", new String[] {}, "redischat.command.channel.set.password",
                     new String[] {"Sets a password needed to join the channel."});
         }
@@ -161,8 +167,8 @@ public class ChannelSetCommand extends BaseCommand {
         }
     }
 
-    public static class SetJoinPermission extends SetCommand {
-        public SetJoinPermission(RedisChat plugin) {
+    public static class SetJoinPermissionCommand extends SetCommand {
+        public SetJoinPermissionCommand(RedisChat plugin) {
             super(plugin, "joinpermission", new String[] {}, "redischat.admin",
                     new String[] {"Admin only - Sets a permission required to join the channel."});
         }
@@ -185,8 +191,8 @@ public class ChannelSetCommand extends BaseCommand {
         }
     }
 
-    public static class SetChatPermission extends SetCommand {
-        public SetChatPermission(RedisChat plugin) {
+    public static class SetChatPermissionCommand extends SetCommand {
+        public SetChatPermissionCommand(RedisChat plugin) {
             super(plugin, "chatpermissions", new String[] {}, "redischat.admin",
                     new String[] {"Admin only - Sets a permission required to chat in the channel."});
         }
@@ -209,8 +215,8 @@ public class ChannelSetCommand extends BaseCommand {
         }
     }
 
-    public static class SetRadius extends SetCommand {
-        public SetRadius(RedisChat plugin) {
+    public static class SetRadiusCommand extends SetCommand {
+        public SetRadiusCommand(RedisChat plugin) {
             super(plugin, "radius", new String[] {}, "redischat.command.set.radius",
                     new String[] {"Sets the radius that the channel will be effective."});
         }
@@ -242,8 +248,8 @@ public class ChannelSetCommand extends BaseCommand {
         }
     }
 
-    public static class SetListed extends SetCommand {
-        public SetListed(RedisChat plugin) {
+    public static class SetListedCommand extends SetCommand {
+        public SetListedCommand(RedisChat plugin) {
             super(plugin, "listed", new String[] {}, "redischat.command.set.listed",
                     new String[] {"Determines whether the channel will be visible in the list."});
         }
