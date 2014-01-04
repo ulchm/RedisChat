@@ -2,6 +2,8 @@ package com.norcode.bukkit.redischat;
 
 import com.norcode.bukkit.playerid.PlayerID;
 import com.norcode.bukkit.redischat.command.ChannelCommand;
+import com.norcode.bukkit.redischat.command.PrivateMessageCommand;
+import com.norcode.bukkit.redischat.command.ReplyCommand;
 import com.norcode.bukkit.redischat.listeners.PubSubListener;
 import net.minecraft.server.v1_7_R1.ChatBaseComponent;
 import net.minecraft.server.v1_7_R1.IChatBaseComponent;
@@ -40,6 +42,9 @@ public class RedisChat extends JavaPlugin implements Listener {
 	private ChatRenderer chatRenderer;
 	private ChannelManager channelManager;
 	private ChannelCommand channelCommand;
+	private PrivateMessageCommand pmCommand;
+	private ReplyCommand replyCommand;
+
 	private static boolean debugMode = true;
 
 	@Override
@@ -50,6 +55,8 @@ public class RedisChat extends JavaPlugin implements Listener {
 		chatRenderer.runTaskTimer(this, 1, 1);
 		channelManager = new ChannelManager(this);
 		channelCommand = new ChannelCommand(this);
+		replyCommand = new ReplyCommand(this);
+		pmCommand = new PrivateMessageCommand(this);
 		Thread listenerThread = new Thread(pubSubListener);
 		listenerThread.start();
 	}
@@ -132,6 +139,22 @@ public class RedisChat extends JavaPlugin implements Listener {
 					event.getPlayer().setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(RedisChat.this, target.getName()));
 					channel = "@" + target.getName();
 					event.setMessage(parts[1]);
+				} else if (event.getMessage().startsWith("#")) {
+					String[] parts = event.getMessage().substring(1).split(" ", 2);
+					String chanName = parts[0];
+					Channel chan = null;
+					for (Channel c: channelManager.getPlayerChannels(event.getPlayer())) {
+						if (c.getName().toLowerCase().equalsIgnoreCase(chanName)) {
+							chan = c;
+							break;
+						}
+					}
+					if (chan == null) {
+						send(event.getPlayer(), ChatColor.RED + "Unknown Channel: " + chanName);
+						return;
+					}
+					event.setMessage(parts[1]);
+					channel = "#" + chan.getName();
 				} else {
 					Channel c = channelManager.getFocusedChannel(event.getPlayer());
 					if (c == null) {

@@ -3,7 +3,9 @@ package com.norcode.bukkit.redischat.command;
 import com.norcode.bukkit.redischat.ChatMessage;
 import com.norcode.bukkit.redischat.MetaKeys;
 import com.norcode.bukkit.redischat.RedisChat;
+import com.norcode.bukkit.redischat.chat.Text;
 import net.minecraft.util.org.apache.commons.lang3.StringUtils;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -34,7 +36,7 @@ public class PrivateMessageCommand extends BaseCommand {
 		List<Player> matches = new ArrayList<Player>();
 		for (Player p: plugin.getServer().getOnlinePlayers()) {
 			if (p.getName().toLowerCase().startsWith(playerName)) {
-				if ((player == null || player.canSee(p)) && !p.getName().equals(sender.getName())) {
+				if ((player == null || player.canSee(p))) {
 					matches.add(p);
 				}
 			}
@@ -55,10 +57,16 @@ public class PrivateMessageCommand extends BaseCommand {
 		} else {
 			target = matches.get(0);
 		}
+		if (target.getName().equals(sender.getName())) {
+			plugin.send(target, new Text(" * ").setColor(ChatColor.WHITE)
+					                .append(new Text("You mumble to yourself, but you can't quite understand what you're trying to say.").setColor(ChatColor.GOLD).setItalic(true)));
+			return;
+		}
 		if (player != null) {
 			player.setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(plugin, target.getName()));
 		}
 		final String dest = "@" + target.getName();
+		args.pop();
 		final ChatMessage msg = new ChatMessage(sender.getName(), dest, StringUtils.join(args, " "), System.currentTimeMillis());
 		new BukkitRunnable() {
 			@Override
@@ -76,13 +84,12 @@ public class PrivateMessageCommand extends BaseCommand {
 		if (sender instanceof Player) {
 			player = (Player) sender;
 		}
-
 		List<String> results = new ArrayList<String>();
 		if (args.size() == 1) {
 			for (Player p: plugin.getServer().getOnlinePlayers()) {
 				if (p.getName().toLowerCase().startsWith(args.peek().toLowerCase())) {
 					if ((player == null || player.canSee(p)) && !p.getName().equals(sender.getName())) {
-						results.add(player.getName());
+						results.add(p.getName());
 					}
 				}
 			}
