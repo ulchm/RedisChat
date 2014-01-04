@@ -12,5 +12,6 @@ public class ChannelCommand extends BaseCommand {
 		registerSubcommand(new ChannelSetCommand(plugin));
 		registerSubcommand(new ChannelJoinCommand(plugin));
 		registerSubcommand(new ChannelLeaveCommand(plugin));
+		registerSubcommand(new ChannelOpCommand(plugin));
 	}
 }

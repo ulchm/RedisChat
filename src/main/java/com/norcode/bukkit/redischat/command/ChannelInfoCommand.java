@@ -33,12 +33,11 @@ public class ChannelInfoCommand extends BaseCommand {
 			}
 		}
 		commandSender.sendMessage("Channel Name: " + ChatColor.GOLD + channel.getName());
-		commandSender.sendMessage("Password: " + channel.getPassword() == null ? "none" : channel.getPassword());
-		commandSender.sendMessage("Owner: " + PlayerID.getOfflinePlayer(channel.getOwnerId()).getName());
+		commandSender.sendMessage("Password: " + (channel.getPassword() == null ? "none" : channel.getPassword()));
+		commandSender.sendMessage("Owner: " + (channel.getOwnerId() == null ? "Nobody" : PlayerID.getOfflinePlayer(channel.getOwnerId()).getName()));
 		commandSender.sendMessage("Listed?: " + channel.isListed());
-		commandSender.sendMessage("Join Permission: " + channel.getJoinPermission() == null ? "none" : channel.getJoinPermission());
-		commandSender.sendMessage("Chat Permission: " + channel.getChatPermission() == null ? "none" : channel.getChatPermission());
-
+		commandSender.sendMessage("Join Permission: " + (channel.getJoinPermission() == null ? "none" : channel.getJoinPermission()));
+		commandSender.sendMessage("Chat Permission: " + (channel.getChatPermission() == null ? "none" : channel.getChatPermission()));
 		String color = channel.getNameColor();
 		ChatColor clr = ChatColor.getByChar(color.charAt(1));
 		commandSender.sendMessage("Channel Name Color: " + clr + clr.name());

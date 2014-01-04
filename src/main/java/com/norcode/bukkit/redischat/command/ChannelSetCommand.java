@@ -2,6 +2,7 @@ package com.norcode.bukkit.redischat.command;
 
 import com.norcode.bukkit.redischat.Channel;
 import com.norcode.bukkit.redischat.RedisChat;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -19,6 +20,7 @@ public class ChannelSetCommand extends BaseCommand {
 		registerSubcommand(new SetListedCommand(plugin));
 		registerSubcommand(new SetPasswordCommand(plugin));
 		registerSubcommand(new SetRadiusCommand(plugin));
+		registerSubcommand(new SetOwnerCommand(plugin));
 		registerSubcommand(new SetTextColorCommand(plugin));
 
 	}
@@ -43,7 +45,9 @@ public class ChannelSetCommand extends BaseCommand {
 				throw new CommandError("You are not currently in any channels?!?!");
 			}
 			if (!((Player) commandSender).getUniqueId().equals(c.getOwnerId()) && !((Player) commandSender).hasPermission("redischat.admin")) {
-				throw new CommandError("You do not have permission to change that setting for this channel.");
+				if (!c.getOpIdSet().contains(((Player) commandSender).getUniqueId())) {
+					throw new CommandError("You do not have permission to change that settings for this channel.");
+				}
 			}
 			onExecute((Player) commandSender, c, args);
 		}
@@ -84,12 +88,11 @@ public class ChannelSetCommand extends BaseCommand {
 			}
 			channel.setNameColor(clr.toString());
 			plugin.getChannelManager().saveChannel(channel);
-			player.sendMessage("Channel 'name-color' has been set to: " + clr + clr.name());
+			player.sendMessage("Channel name-color has been set to: " + clr + clr.name());
 		}
 
 		@Override
 		protected List<String> onTab(Player sender, Channel channel, LinkedList<String> args) {
-			plugin.debug("onTabComplete nameColor w/ " + args.peek());
 			List<String> results = new ArrayList<String>();
 			if (args.size() == 1) {
 				for (ChatColor c: ChatColor.values()) {
@@ -123,14 +126,13 @@ public class ChannelSetCommand extends BaseCommand {
             if (clr == null) {
                 throw new CommandError("Unknown Color: " + args.peek());
             }
-            channel.setNameColor(clr.toString());
+            channel.setTextColor(clr.toString());
             plugin.getChannelManager().saveChannel(channel);
-            player.sendMessage("Channel 'text-color' has been set to: " + clr + clr.name());
+            player.sendMessage("Channel text-color has been set to: " + clr + clr.name());
         }
 
         @Override
         protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
-            plugin.debug("onTabComplete nameColor w/ " + args.peek());
             List<String> results = new ArrayList<String>();
             if (args.size() == 1) {
                 for (ChatColor c: ChatColor.values()) {
@@ -142,6 +144,44 @@ public class ChannelSetCommand extends BaseCommand {
             return results;
         }
     }
+
+	public static class SetOwnerCommand extends SetCommand {
+		public SetOwnerCommand(RedisChat plugin) {
+			super(plugin, "owner", new String[] {}, "redischat.command.channel.set.owner",
+					new String[] {"Sets the color of the channel text displayed on player messages."});
+		}
+
+		@Override
+		protected void onExecute(Player player, Channel channel, LinkedList<String> args) throws CommandError {
+			if (args.size() == 0) {
+				showHelp(player, "owner", args);
+				return;
+			}
+			if (!player.getUniqueId().equals(channel.getOwnerId())) {
+				if (!player.hasPermission("redischat.admin")) {
+					throw new CommandError("Only the channel owner, or an admin, may change the owner.");
+				}
+			}
+			String newOwnerName = args.peek().toLowerCase();
+			Player newOwner = Bukkit.getPlayerExact(newOwnerName);
+			channel.setOwnerId(newOwner.getUniqueId());
+			plugin.getChannelManager().saveChannel(channel);
+			player.sendMessage("Channel owner has been set to: " + newOwner.getName());
+		}
+
+		@Override
+		protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
+			List<String> results = new ArrayList<String>();
+			if (args.size() == 1) {
+				for (Player p: plugin.getServer().getOnlinePlayers()) {
+					if (player.canSee(p) && p.getName().startsWith(args.peek().toLowerCase())) {
+						results.add(p.getName());
+					}
+				}
+			}
+			return results;
+		}
+	}
 
     public static class SetPasswordCommand extends SetCommand {
         public SetPasswordCommand(RedisChat plugin) {
