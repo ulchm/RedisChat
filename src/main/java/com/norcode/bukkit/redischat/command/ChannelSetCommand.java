@@ -123,7 +123,7 @@ public class ChannelSetCommand extends BaseCommand {
             if (clr == null) {
                 throw new CommandError("Unknown Color: " + args.peek());
             }
-            channel.setNameColor(clr.toString());
+            channel.setTextColor(clr.toString());
             plugin.getChannelManager().saveChannel(channel);
             player.sendMessage("Channel 'text-color' has been set to: " + clr + clr.name());
         }
