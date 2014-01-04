@@ -2,6 +2,7 @@ package com.norcode.bukkit.redischat.command;
 
 import com.norcode.bukkit.redischat.Channel;
 import com.norcode.bukkit.redischat.RedisChat;
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -94,4 +95,178 @@ public class ChannelSetCommand extends BaseCommand {
 			return results;
 		}
 	}
+
+    public static class SetTextColorCommand extends SetCommand {
+
+        public SetTextColorCommand(RedisChat plugin) {
+            super(plugin, "textcolor", new String[] {}, "redischat.command.channel.set.textcolor",
+                    new String[] {"Sets the color of the channel text displayed on player messages."});
+        }
+
+        @Override
+        protected void onExecute(Player player, Channel channel, LinkedList<String> args) throws CommandError {
+            if (args.size() == 0) {
+                showHelp(player, "textcolor", args);
+                return;
+            }
+            ChatColor clr = null;
+            clr = ChatColor.valueOf(args.peek().toUpperCase());
+            if (clr == null) {
+                clr = ChatColor.getByChar(args.peek());
+            }
+            if (clr == null) {
+                throw new CommandError("Unknown Color: " + args.peek());
+            }
+            channel.setNameColor(clr.toString());
+            plugin.getChannelManager().saveChannel(channel);
+            player.sendMessage("Channel 'text-color' has been set to: " + clr + clr.name());
+        }
+
+        @Override
+        protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
+            plugin.debug("onTabComplete nameColor w/ " + args.peek());
+            List<String> results = new ArrayList<String>();
+            if (args.size() == 1) {
+                for (ChatColor c: ChatColor.values()) {
+                    if (c.name().toLowerCase().startsWith(args.peek().toLowerCase())) {
+                        results.add(c.name());
+                    }
+                }
+            }
+            return results;
+        }
+    }
+
+    public static class SetPassword extends SetCommand {
+        public SetPassword(RedisChat plugin) {
+            super(plugin, "password", new String[] {}, "redischat.command.channel.set.password",
+                    new String[] {"Sets a password needed to join the channel."});
+        }
+
+        @Override
+        protected void onExecute(Player player, Channel channel, LinkedList<String> args) throws CommandError {
+            if (args.size() == 0) {
+                channel.setPassword(null);
+                plugin.getChannelManager().saveChannel(channel);
+                return;
+            }
+            String password = args.peek();
+            channel.setPassword(password);
+            plugin.getChannelManager().saveChannel(channel);
+        }
+
+        @Override
+        protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
+            return null;
+        }
+    }
+
+    public static class SetJoinPermission extends SetCommand {
+        public SetJoinPermission(RedisChat plugin) {
+            super(plugin, "joinpermission", new String[] {}, "redischat.admin",
+                    new String[] {"Admin only - Sets a permission required to join the channel."});
+        }
+
+        @Override
+        protected void onExecute(Player player, Channel channel, LinkedList<String> args) throws CommandError {
+            if (args.size() == 0) {
+                channel.setJoinPermission(null);
+                plugin.getChannelManager().saveChannel(channel);
+                return;
+            }
+            String permission = args.peek();
+            channel.setJoinPermission(permission);
+            plugin.getChannelManager().saveChannel(channel);
+        }
+
+        @Override
+        protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
+            return null;
+        }
+    }
+
+    public static class SetChatPermission extends SetCommand {
+        public SetChatPermission(RedisChat plugin) {
+            super(plugin, "chatpermissions", new String[] {}, "redischat.admin",
+                    new String[] {"Admin only - Sets a permission required to chat in the channel."});
+        }
+
+        @Override
+        protected void onExecute(Player player, Channel channel, LinkedList<String> args) throws CommandError {
+            if (args.size() == 0) {
+                channel.setChatPermission(null);
+                plugin.getChannelManager().saveChannel(channel);
+                return;
+            }
+            String permission = args.peek();
+            channel.setChatPermission(permission);
+            plugin.getChannelManager().saveChannel(channel);
+        }
+
+        @Override
+        protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
+            return null;
+        }
+    }
+
+    public static class SetRadius extends SetCommand {
+        public SetRadius(RedisChat plugin) {
+            super(plugin, "radius", new String[] {}, "redischat.command.set.radius",
+                    new String[] {"Sets the radius that the channel will be effective."});
+        }
+
+        @Override
+        protected void onExecute(Player player, Channel channel, LinkedList<String> args) throws CommandError {
+            Integer radius = -1;
+            if (args.size() == 0) {
+                channel.setRadius(radius);
+                plugin.getChannelManager().saveChannel(channel);
+                return;
+            }
+            try {
+                radius = Integer.parseInt(args.peek());
+                if (radius < 1) {
+                    throw new CommandError("Radius can't be less then 1");
+                }
+            }
+            catch (IllegalArgumentException e){
+                    throw new CommandError("Radius can't be less then 1.");
+            }
+            channel.setRadius(radius);
+            plugin.getChannelManager().saveChannel(channel);
+        }
+
+        @Override
+        protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
+            return null;
+        }
+    }
+
+    public static class SetListed extends SetCommand {
+        public SetListed(RedisChat plugin) {
+            super(plugin, "listed", new String[] {}, "redischat.command.set.listed",
+                    new String[] {"Determines whether the channel will be visible in the list."});
+        }
+
+        @Override
+        protected void onExecute(Player player, Channel channel, LinkedList<String> args) throws CommandError {
+            if (args.size() == 0) {
+                showHelp(player, "listed", args);
+                return;
+            }
+            Boolean listed = null;
+            try {
+                listed = Boolean.parseBoolean(args.pop());
+            } catch (IllegalArgumentException e) {
+                throw new CommandError("You must enter true or false.");
+            }
+            channel.setListed(listed);
+            plugin.getChannelManager().saveChannel(channel);
+        }
+
+        @Override
+        protected List<String> onTab(Player player, Channel channel, LinkedList<String> args) {
+            return null;
+        }
+    }
 }
