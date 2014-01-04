@@ -14,6 +14,7 @@ import net.minecraft.server.v1_7_R1.NBTTagShort;
 import net.minecraft.server.v1_7_R1.NBTTagString;
 import net.minecraft.server.v1_7_R1.PacketPlayOutChat;
 import net.minecraft.util.org.apache.commons.lang3.StringUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_7_R1.entity.CraftPlayer;
@@ -23,14 +24,12 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ChatManager extends BukkitRunnable {
+public class ChatRenderer extends BukkitRunnable {
 
 	private final Chat vaultChat;
 	private DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
@@ -45,7 +44,7 @@ public class ChatManager extends BukkitRunnable {
 		return messageQueue;
 	}
 
-	public ChatManager(RedisChat plugin) {
+	public ChatRenderer(RedisChat plugin) {
 		this.plugin = plugin;
 		// setup vault perms for looking up players group. and vault chat for getting chat prefixes.
 		RegisteredServiceProvider<Permission> rsp = plugin.getServer().getServicesManager().getRegistration(Permission.class);
@@ -84,31 +83,6 @@ public class ChatManager extends BukkitRunnable {
 				.setClick(ClickAction.SUGGEST_COMMAND, "/msg " + senderName);
 	}
 
-	public void setFocusedChannel(Player player, String channel) {
-		LinkedList<String> channels = (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
-		channels.remove(channel);
-		if (!channelMembers.containsKey(channel)) {
-			channelMembers.put(channel, new HashSet<String>());
-		}
-		channelMembers.get(channel).add(player.getName());
-		channels.add(0, channel);
-	}
-
-	public String getFocusedChannel(Player player) {
-		return getPlayerChannels(player).peek();
-	}
-
-	private LinkedList<String> getPlayerChannels(Player player) {
-		return (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
-	}
-
-	public Set<String> getChannelPlayers(String channel) {
-		if (!channelMembers.containsKey(channel)) {
-			channelMembers.put(channel, new HashSet<String>());
-		}
-		return channelMembers.get(channel);
-	}
-
 	private String getGroupColor(String group) {
 		if (group.equalsIgnoreCase("admin")) {
 			return ChatColor.GOLD.toString();
@@ -133,19 +107,19 @@ public class ChatManager extends BukkitRunnable {
 		switch (msgType) {
 		case CHANNEL:
 			String channel = msg.getDestination().substring(1);
-			prefix.append("[" + channel + "] ");
+			prefix.append(ChatColor.GRAY + "[" + ChatColor.YELLOW + channel + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		case LOCAL:
-			prefix.append("[L] ");
+			prefix.append(ChatColor.GRAY + "[" + ChatColor.YELLOW + "L" + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		case BROADCAST:
-			prefix.append("[" + ChatColor.RED + "" + ChatColor.BOLD + "!" + ChatColor.RESET + "]");
+			prefix.append(ChatColor.GRAY + "[" + ChatColor.RED + "!" + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		case PRIVATE:
-			prefix.append("[@] ");
+			prefix.append(ChatColor.GRAY + "[" + ChatColor.AQUA + "@" + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		}
-		prefix.append("<").append(formatSender(msg.getSender())).append("> ").append(new Text(msg.getMessage()));
+		prefix.append(ChatColor.DARK_GRAY + "<").append(formatSender(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(new Text(msg.getMessage()));
 		PacketPlayOutChat packet = new PacketPlayOutChat(prefix, true);
 		return packet;
 	}
@@ -168,8 +142,11 @@ public class ChatManager extends BukkitRunnable {
 				}
 				break;
 			case CHANNEL:
-				for (String p: getChannelPlayers(msg.getDestination().substring(1))) {
-					send(plugin.getServer().getPlayerExact(p), packet);
+				Channel chan = plugin.getChannelManager().getChannel(msg.getDestination().substring(1));
+				if (chan != null && chan.isMember(msg.getSender())) {
+					for (String name: chan.getMembers()) {
+						send(Bukkit.getPlayerExact(name), packet);
+					}
 				}
 				break;
 			case LOCAL:
