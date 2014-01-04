@@ -70,17 +70,17 @@ public class ChatRenderer extends BukkitRunnable {
 		this.baseTag.set("tag", tag);
 	}
 
-	public IChatBaseComponent formatSender(String senderName) {
-		Player p = plugin.getServer().getPlayerExact(senderName);
+	public IChatBaseComponent formatPlayerName(String playerName) {
+		Player p = plugin.getServer().getPlayerExact(playerName);
 		String rank = getPlayerRank(p);
 		String rankColor = getGroupColor(rank);
-		baseTag.getCompound("tag").getCompound("display").set("Name", new NBTTagString(rankColor + senderName + ChatColor.RESET));
+		baseTag.getCompound("tag").getCompound("display").set("Name", new NBTTagString(rankColor + playerName + ChatColor.RESET));
 		NBTTagList lore = new NBTTagList();
 		lore.add(new NBTTagString(rankColor + rank));
 		baseTag.getCompound("tag").getCompound("display").set("Lore", lore);
-		return new Text(senderName)
+		return new Text(playerName)
 				.setHover(HoverAction.SHOW_ITEM, new ChatComponentText(baseTag.toString()))
-				.setClick(ClickAction.SUGGEST_COMMAND, "/msg " + senderName);
+				.setClick(ClickAction.SUGGEST_COMMAND, "/msg " + playerName);
 	}
 
 	private String getGroupColor(String group) {
@@ -125,7 +125,7 @@ public class ChatRenderer extends BukkitRunnable {
 			prefix.append(ChatColor.GRAY + "[" + ChatColor.RED + "!" + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		}
-		prefix.append(ChatColor.DARK_GRAY + "<").append(formatSender(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(new Text(textColor + msg.getMessage()));
+		prefix.append(ChatColor.DARK_GRAY + "<").append(formatPlayerName(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(new Text(textColor + msg.getMessage()));
 		PacketPlayOutChat packet = new PacketPlayOutChat(prefix, true);
 		return packet;
 	}
@@ -177,8 +177,8 @@ public class ChatRenderer extends BukkitRunnable {
 			case PRIVATE:
 				Player recip = plugin.getServer().getPlayerExact(msg.getDestination().substring(1));
 				Player sender = plugin.getServer().getPlayerExact(msg.getSender());
-				recip.setMetadata("pm-reply-to", new FixedMetadataValue(plugin, sender.getName()));
-				sender.setMetadata("pm-reply-to", new FixedMetadataValue(plugin, recip.getName()));
+				recip.setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(plugin, sender.getName()));
+				sender.setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(plugin, recip.getName()));
 				if (recip != null) {
 					packet = new PacketPlayOutChat(formatIncomingPM(msg), true);
 					send(recip, packet);
@@ -193,7 +193,7 @@ public class ChatRenderer extends BukkitRunnable {
 	private IChatBaseComponent formatIncomingPM(ChatMessage msg) {
 		return new Text("")
 				.append(ChatColor.GRAY + "[")
-				.append(formatSender(msg.getSender()))
+				.append(formatPlayerName(msg.getSender()))
 				.append(ChatColor.DARK_AQUA + " ▶ " + ChatColor.GRAY + "You] ")
 				.append(msg.getMessage());
 	}
@@ -201,7 +201,7 @@ public class ChatRenderer extends BukkitRunnable {
 	private IChatBaseComponent formatOutgoingPM(ChatMessage msg) {
 		return new Text("")
 				.append(ChatColor.GRAY + "[You" + ChatColor.DARK_AQUA + " ▶ ")
-				.append(formatSender(msg.getDestination().substring(1)))
+				.append(formatPlayerName(msg.getDestination().substring(1)))
 				.append(ChatColor.GRAY + "] ")
 				.append(msg.getMessage());
 

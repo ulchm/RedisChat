@@ -48,7 +48,7 @@ public class ChannelManager {
 	}
 
 	public List<Channel> getPlayerChannels(Player player) {
-		LinkedList<String> pc = (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
+		LinkedList<String> pc = (LinkedList<String>) player.getMetadata(MetaKeys.CHANNEL_LIST).get(0).value();
 		List<Channel> results = new ArrayList<Channel>(pc.size());
 		for (String cn: pc) {
 			Channel c = channels.get(cn);
@@ -79,7 +79,7 @@ public class ChannelManager {
 	}
 
 	public boolean setFocusedChannel(Player player, String channel) {
-		LinkedList<String> pc = (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
+		LinkedList<String> pc = (LinkedList<String>) player.getMetadata(MetaKeys.CHANNEL_LIST).get(0).value();
 		if (!pc.contains(channel.toLowerCase())) {
 			Channel c = getChannel(channel);
 			return joinChannel(player, c, null);
@@ -91,7 +91,7 @@ public class ChannelManager {
 	}
 
 	public Channel getFocusedChannel(Player player) {
-		LinkedList<String> pc = (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
+		LinkedList<String> pc = (LinkedList<String>) player.getMetadata(MetaKeys.CHANNEL_LIST).get(0).value();
 		return channels.get(pc.peek().toLowerCase());
 	}
 
@@ -104,7 +104,7 @@ public class ChannelManager {
 			return false;
 		}
 
-		LinkedList<String> pc = (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
+		LinkedList<String> pc = (LinkedList<String>) player.getMetadata(MetaKeys.CHANNEL_LIST).get(0).value();
 		pc.add(0, channel.getName().toLowerCase());
 		channel.getMembers().add(player.getName());
 		return true;
@@ -112,7 +112,7 @@ public class ChannelManager {
 
 	public void leaveChannel(Player player, Channel channel) {
 		channel.getMembers().remove(player.getName());
-		LinkedList<String> pc = (LinkedList<String>) player.getMetadata("channel-list").get(0).value();
+		LinkedList<String> pc = (LinkedList<String>) player.getMetadata(MetaKeys.CHANNEL_LIST).get(0).value();
 		pc.remove(channel.getName().toLowerCase());
 	}
 
