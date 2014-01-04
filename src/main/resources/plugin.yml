@@ -12,6 +12,16 @@ permissions:
     default: true
   redischat.command.reply:
     default: true
+  redischat.command.channel.set.password:
+    default: true
+  redischat.command.set.listed:
+    default: true
+  redischat.command.set.radius:
+     default: true
+  redischat.command.channel.set.textcolor:
+     default: true
+  redischat.command.channel.set.namecolor:
+     default: true
 
 commands:
   channel:
