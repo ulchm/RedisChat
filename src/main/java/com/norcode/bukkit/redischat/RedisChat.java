@@ -97,11 +97,11 @@ public class RedisChat extends JavaPlugin implements Listener {
 					String[] parts = event.getMessage().substring(1).split(" ", 2);
 					Player target = null;
 					if (parts[0].trim().equals("")) {
-						if (!event.getPlayer().hasMetadata("pm-reply-to")) {
+						if (!event.getPlayer().hasMetadata(MetaKeys.PM_REPLY_TO)) {
 							send(event.getPlayer(), ChatColor.RED + "You do not have an ongoing conversation.");
 							return;
 						}
-						String targetName = event.getPlayer().getMetadata("pm-reply-to").get(0).asString();
+						String targetName = event.getPlayer().getMetadata(MetaKeys.PM_REPLY_TO).get(0).asString();
 						target = Bukkit.getPlayerExact(targetName);
 						if (target == null) {
 							send(event.getPlayer(), ChatColor.RED + targetName + " is no longer online.");
@@ -129,8 +129,8 @@ public class RedisChat extends JavaPlugin implements Listener {
 						}
 
 					}
-					event.getPlayer().setMetadata("pm-reply-to", new FixedMetadataValue(RedisChat.this, target.getName()));
-					channel = "%" + target.getName();
+					event.getPlayer().setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(RedisChat.this, target.getName()));
+					channel = "@" + target.getName();
 					event.setMessage(parts[1]);
 				} else {
 					Channel c = channelManager.getFocusedChannel(event.getPlayer());
@@ -148,20 +148,19 @@ public class RedisChat extends JavaPlugin implements Listener {
 		});
 	}
 
-
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
-		if (!event.getPlayer().hasMetadata("channel-list")) {
-			event.getPlayer().setMetadata("channel-list", new FixedMetadataValue(this, new LinkedList<String>()));
+		if (!event.getPlayer().hasMetadata(MetaKeys.CHANNEL_LIST)) {
+			event.getPlayer().setMetadata(MetaKeys.CHANNEL_LIST, new FixedMetadataValue(this, new LinkedList<String>()));
 			ConfigurationSection cfg = PlayerID.getPlayerData(getName(), event.getPlayer());
 			List<String> channels;
-			if (!cfg.contains("channel-list")) {
+			if (!cfg.contains(MetaKeys.CHANNEL_LIST)) {
 				channels = new ArrayList<String>();
 				channels.add("G");
-				cfg.set("channel-list", channels);
+				cfg.set(MetaKeys.CHANNEL_LIST, channels);
 				PlayerID.savePlayerData(getName(), event.getPlayer(), cfg);
 			}
-			channels = cfg.getStringList("channel-list");
+			channels = cfg.getStringList(MetaKeys.CHANNEL_LIST);
 			List<String> channelList = new ArrayList<String>(channels);
 			Collections.reverse(channelList);
 			for (String c: channelList) {
@@ -170,6 +169,7 @@ public class RedisChat extends JavaPlugin implements Listener {
 				}
 			}
 		}
+
 	}
 
 	@EventHandler

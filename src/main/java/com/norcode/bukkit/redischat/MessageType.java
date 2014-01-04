@@ -1,7 +1,7 @@
 package com.norcode.bukkit.redischat;
 
 public enum MessageType {
-	BROADCAST("!"), CHANNEL("#"), PRIVATE("%");
+	BROADCAST("!"), CHANNEL("#"), PRIVATE("@");
 	private String prefix;
 
 	private MessageType(String prefix) {

@@ -177,8 +177,8 @@ public class ChatRenderer extends BukkitRunnable {
 			case PRIVATE:
 				Player recip = plugin.getServer().getPlayerExact(msg.getDestination().substring(1));
 				Player sender = plugin.getServer().getPlayerExact(msg.getSender());
-				recip.setMetadata("pm-reply-to", new FixedMetadataValue(plugin, sender.getName()));
-				sender.setMetadata("pm-reply-to", new FixedMetadataValue(plugin, recip.getName()));
+				recip.setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(plugin, sender.getName()));
+				sender.setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(plugin, recip.getName()));
 				if (recip != null) {
 					packet = new PacketPlayOutChat(formatIncomingPM(msg), true);
 					send(recip, packet);
