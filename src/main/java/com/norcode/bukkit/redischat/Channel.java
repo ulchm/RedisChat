@@ -1,14 +1,17 @@
 package com.norcode.bukkit.redischat;
 
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 
 import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class Channel {
 
 	private transient HashSet<String> members = new HashSet<String>();
 	private UUID ownerId;
+	private Set<UUID> opIdSet = new HashSet<UUID>();
 	private String name;
 	private String nameColor;
 	private String textColor = ChatColor.GRAY.toString();
@@ -16,7 +19,7 @@ public class Channel {
 	private String joinPermission;
 	private String chatPermission;
 	private int radius = -1;
-	private boolean listed;
+	private boolean listed = true;
 
 	public UUID getOwnerId() {
 		return ownerId;
@@ -96,5 +99,25 @@ public class Channel {
 
 	public void setRadius(int radius) {
 		this.radius = radius;
+	}
+
+	public Set<UUID> getOpIdSet() {
+		return opIdSet;
+	}
+
+	public void setOpIdSet(Set<UUID> opIdSet) {
+		this.opIdSet = opIdSet;
+	}
+
+	public boolean isOp(Player player) {
+		return opIdSet.contains(player.getUniqueId());
+	}
+
+	public void opPlayer(Player p) {
+		opIdSet.add(p.getUniqueId());
+	}
+
+	public void deopPlayer(Player p) {
+		opIdSet.remove(p.getUniqueId());
 	}
 }

@@ -45,7 +45,9 @@ public class ChannelSetCommand extends BaseCommand {
 				throw new CommandError("You are not currently in any channels?!?!");
 			}
 			if (!((Player) commandSender).getUniqueId().equals(c.getOwnerId()) && !((Player) commandSender).hasPermission("redischat.admin")) {
-				throw new CommandError("You do not have permission to change that setting for this channel.");
+				if (!c.getOpIdSet().contains(((Player) commandSender).getUniqueId())) {
+					throw new CommandError("You do not have permission to change that settings for this channel.");
+				}
 			}
 			onExecute((Player) commandSender, c, args);
 		}
