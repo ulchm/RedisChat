@@ -54,6 +54,6 @@ public class ChannelLeaveCommand extends BaseCommand {
 			throw new CommandError("You are not in " + c.getName());
 		}
 		plugin.getChannelManager().leaveChannel((Player) commandSender, c);
-		commandSender.sendMessage(ChatColor.DARK_GRAY + "You have left " + c.getName() + ". You are now chatting in " + plugin.getChannelManager().getFocusedChannel((Player) commandSender));
+		commandSender.sendMessage(ChatColor.DARK_GRAY + "You have left " + c.getName() + ". You are now chatting in " + plugin.getChannelManager().getFocusedChannel((Player) commandSender).getName());
 	}
 }
