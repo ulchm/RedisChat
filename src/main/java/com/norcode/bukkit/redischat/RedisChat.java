@@ -29,6 +29,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -173,6 +174,7 @@ public class RedisChat extends JavaPlugin implements Listener {
 
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
+		List<String> channelList;
 		if (!event.getPlayer().hasMetadata(MetaKeys.CHANNEL_LIST)) {
 			event.getPlayer().setMetadata(MetaKeys.CHANNEL_LIST, new FixedMetadataValue(this, new LinkedList<String>()));
 			ConfigurationSection cfg = PlayerID.getPlayerData(getName(), event.getPlayer());
@@ -184,12 +186,14 @@ public class RedisChat extends JavaPlugin implements Listener {
 				PlayerID.savePlayerData(getName(), event.getPlayer(), cfg);
 			}
 			channels = cfg.getStringList(MetaKeys.CHANNEL_LIST);
-			List<String> channelList = new ArrayList<String>(channels);
-			Collections.reverse(channelList);
-			for (String c: channelList) {
-				if (channelManager.channelExists(c)) {
-					channelManager.joinChannel(event.getPlayer(), channelManager.getChannel(c), null);
-				}
+			channelList = new ArrayList<String>(channels);
+		} else {
+			channelList = new ArrayList<String>((Collection<? extends String>) event.getPlayer().getMetadata(MetaKeys.CHANNEL_LIST).get(0).value());
+		}
+		Collections.reverse(channelList);
+		for (String c: channelList) {
+			if (channelManager.channelExists(c)) {
+				channelManager.joinChannel(event.getPlayer(), channelManager.getChannel(c), null);
 			}
 		}
 
