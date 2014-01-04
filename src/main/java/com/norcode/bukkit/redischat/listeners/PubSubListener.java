@@ -6,50 +6,51 @@ import org.bukkit.craftbukkit.libs.com.google.gson.Gson;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
-public class PubSubListener extends JedisPubSub implements Runnable{
+public class PubSubListener extends JedisPubSub implements Runnable {
 
-    private RedisChat plugin;
-    private Jedis jedis;
+	private RedisChat plugin;
+	private Jedis jedis;
 	private Gson gson = new Gson();
-    public PubSubListener(RedisChat plugin) {
-        this.plugin = plugin;
-    }
 
-    @Override
-    public void onPMessage(String pattern, String channel, String message) {
-        ChatMessage msg = gson.fromJson(message, ChatMessage.class);
+	public PubSubListener(RedisChat plugin) {
+		this.plugin = plugin;
+	}
+
+	@Override
+	public void onPMessage(String pattern, String channel, String message) {
+		ChatMessage msg = gson.fromJson(message, ChatMessage.class);
 		msg.setDestination(channel.substring(5));
 		plugin.getChatManager().getMessageQueue().add(msg);
-    }
+	}
 
-    @Override
-    public void run() {
-        jedis = plugin.getJedisPool().getResource();
-        jedis.psubscribe(this, "chat:*");
-        plugin.getJedisPool().returnResource(jedis);
-    }
+	@Override
+	public void run() {
+		jedis = plugin.getJedisPool().getResource();
+		jedis.psubscribe(this, "chat:*");
+		plugin.getJedisPool().returnResource(jedis);
+	}
 
-    public synchronized void stopRunning() {
-        this.unsubscribe();
-    }
+	public synchronized void stopRunning() {
+		this.unsubscribe();
+	}
 
-    @Override
-    public void onPSubscribe(String s, int i) {
-    }
+	@Override
+	public void onPSubscribe(String s, int i) {
+	}
 
-    @Override
-    public void onPUnsubscribe(String s, int i) {
-    }
+	@Override
+	public void onPUnsubscribe(String s, int i) {
+	}
 
-    @Override
-    public void onSubscribe(String s, int i) {
-    }
+	@Override
+	public void onSubscribe(String s, int i) {
+	}
 
-    @Override
-    public void onUnsubscribe(String s, int i) {
-    }
+	@Override
+	public void onUnsubscribe(String s, int i) {
+	}
 
-    @Override
-    public void onMessage(String s, String s2) {
-    }
+	@Override
+	public void onMessage(String s, String s2) {
+	}
 }

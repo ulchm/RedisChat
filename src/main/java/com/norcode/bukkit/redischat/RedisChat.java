@@ -23,34 +23,34 @@ import java.util.List;
 public class RedisChat extends JavaPlugin implements Listener {
 
 	int LOCAL_RADIUS = 64;
-    private JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, 0);
-    private PubSubListener pubSubListener = new PubSubListener(this);
-    private Gson gson = new Gson();
+	private JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, 0);
+	private PubSubListener pubSubListener = new PubSubListener(this);
+	private Gson gson = new Gson();
 	private ChatManager chatManager;
 
 	@Override
-    public void onEnable() {
-        getServer().getPluginManager().registerEvents(this, this);
+	public void onEnable() {
+		getServer().getPluginManager().registerEvents(this, this);
 		chatManager = new ChatManager(this);
 		chatManager.runTaskTimer(this, 1, 1);
-        Thread listenerThread = new Thread(pubSubListener);
-        listenerThread.start();
-    }
+		Thread listenerThread = new Thread(pubSubListener);
+		listenerThread.start();
+	}
 
-    @Override
-    public void onDisable() {
-        pubSubListener.stopRunning();
+	@Override
+	public void onDisable() {
+		pubSubListener.stopRunning();
 		chatManager.cancel();
-    }
+	}
 
-    public JedisPool getJedisPool() {
-        return jedisPool;
-    }
+	public JedisPool getJedisPool() {
+		return jedisPool;
+	}
 
-    @EventHandler(ignoreCancelled = true)
-    public void asyncPlayerChatEvent(AsyncPlayerChatEvent event) {
+	@EventHandler(ignoreCancelled = true)
+	public void asyncPlayerChatEvent(AsyncPlayerChatEvent event) {
 
-        Jedis jedis = jedisPool.getResource();
+		Jedis jedis = jedisPool.getResource();
 		String channel = "G";
 		// First check for 'channel switches' which aren't real messages.
 		if (event.getMessage().length() == 2 && event.getMessage().startsWith("#")) {
@@ -80,11 +80,10 @@ public class RedisChat extends JavaPlugin implements Listener {
 
 		}
 		ChatMessage chatMessage = new ChatMessage(event.getPlayer().getName(), channel, event.getMessage(), System.currentTimeMillis());
-        jedis.publish("chat:" + channel, gson.toJson(chatMessage));
-        jedisPool.returnResource(jedis);
-        event.setCancelled(true);
-    }
-
+		jedis.publish("chat:" + channel, gson.toJson(chatMessage));
+		jedisPool.returnResource(jedis);
+		event.setCancelled(true);
+	}
 
 
 	@EventHandler
@@ -100,7 +99,7 @@ public class RedisChat extends JavaPlugin implements Listener {
 			}
 			channels = cfg.getStringList("channel-list");
 			LinkedList<String> channelList = new LinkedList<String>();
-			for (String c: channels) {
+			for (String c : channels) {
 				channelList.add(c);
 				chatManager.getChannelPlayers(c).add(event.getPlayer().getName());
 			}
