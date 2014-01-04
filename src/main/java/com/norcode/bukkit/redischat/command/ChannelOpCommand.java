@@ -60,7 +60,9 @@ public class ChannelOpCommand extends BaseCommand {
 		protected void onExecute(CommandSender commandSender, String label, LinkedList<String> args) throws CommandError {
 			Channel c = plugin.getChannelManager().getFocusedChannel((Player) commandSender);
 			if (!c.isOp((Player) commandSender) && !((Player) commandSender).getUniqueId().equals(c.getOwnerId())) {
-				throw new CommandError("You don't have permission to edit the operator list for this channel.");
+				if (!commandSender.hasPermission("redischat.admin")) {
+					throw new CommandError("You don't have permission to edit the operator list for this channel.");
+				}
 			}
 			List<Player> matches = new ArrayList<Player>();
 			for (Player p: plugin.getServer().getOnlinePlayers()) {
@@ -84,7 +86,11 @@ public class ChannelOpCommand extends BaseCommand {
 				matches.clear();
 				matches.add(match);
 			}
+
 			Player target = matches.get(0);
+			if (target.getUniqueId().equals(c.getOwnerId())) {
+				throw new CommandError(target.getName() + " is already the owner of this channel.");
+			}
 			c.getOpIdSet().add(target.getUniqueId());
 			plugin.send(commandSender, target.getName() + " has been added to the operator list for #" + c.getName());
 			plugin.getChannelManager().saveChannel(c);
@@ -101,7 +107,9 @@ public class ChannelOpCommand extends BaseCommand {
 		protected void onExecute(CommandSender commandSender, String label, LinkedList<String> args) throws CommandError {
 			Channel c = plugin.getChannelManager().getFocusedChannel((Player) commandSender);
 			if (!c.isOp((Player) commandSender) && !((Player) commandSender).getUniqueId().equals(c.getOwnerId())) {
-				throw new CommandError("You don't have permission to edit the operator list for this channel.");
+				if (!commandSender.hasPermission("redischat.admin")) {
+					throw new CommandError("You don't have permission to edit the operator list for this channel.");
+				}
 			}
 			List<Player> matches = new ArrayList<Player>();
 			for (Player p: plugin.getServer().getOnlinePlayers()) {
