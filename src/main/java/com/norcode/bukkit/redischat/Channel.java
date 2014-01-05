@@ -10,9 +10,14 @@ import java.util.UUID;
 public class Channel {
 
 	private transient HashSet<String> members = new HashSet<String>();
+	private long createdAt;
+	private long lastJoinedAt;
+	private boolean autoJoin = false;
+	private boolean noDelete = false;
 	private UUID ownerId;
 	private Set<UUID> opIdSet = new HashSet<UUID>();
 	private String name;
+	private String description = "";
 	private String nameColor;
 	private String textColor = ChatColor.GRAY.toString();
 	private String password;
@@ -119,5 +124,61 @@ public class Channel {
 
 	public void deopPlayer(Player p) {
 		opIdSet.remove(p.getUniqueId());
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public long getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(long createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public long getLastJoinedAt() {
+		return lastJoinedAt;
+	}
+
+	public void setLastJoinedAt(long lastJoinedAt) {
+		this.lastJoinedAt = lastJoinedAt;
+	}
+
+	public boolean isNoDelete() {
+		return noDelete;
+	}
+
+	public void setNoDelete(boolean noDelete) {
+		this.noDelete = noDelete;
+	}
+
+	public boolean isAutoJoin() {
+		return autoJoin;
+	}
+
+	public void setAutoJoin(boolean autoJoin) {
+		this.autoJoin = autoJoin;
+	}
+
+	public ChatColor getNameChatColor() {
+		if (nameColor.length() == 0) {
+			return null;
+		} else {
+			return ChatColor.getByChar(nameColor.charAt(1));
+		}
+	}
+
+	public ChatColor getTextChatColor() {
+		if (textColor.length() == 0) {
+			return null;
+		} else {
+			return ChatColor.getByChar(textColor.charAt(1));
+		}
 	}
 }

@@ -28,6 +28,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ChatRenderer extends BukkitRunnable {
 
@@ -43,6 +45,119 @@ public class ChatRenderer extends BukkitRunnable {
 	public Queue<ChatMessage> getMessageQueue() {
 		return messageQueue;
 	}
+
+	private static final Pattern colorPattern = Pattern.compile("(\u00A7[0-9a-fklmnor])");
+	private static final Pattern linkPattern = Pattern.compile("(?i)\\b((?:https?://|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\".,<>?«»“”‘’]))");
+
+	public Text formatChatMessage(String message, Text baseFormat, Player sender) {
+		boolean canColor = sender.hasPermission("redischat.color-codes");
+		boolean canLink = sender.hasPermission("redischat.link-urls");
+		Matcher m = colorPattern.matcher(ChatColor.translateAlternateColorCodes('&', message));
+		StringBuffer buf;
+		Text root = baseFormat;
+		Text working = root;
+		Text tmp;
+		String tail;
+		while (m.find()) {
+			buf = new StringBuffer();
+			char c = m.group().charAt(1);
+			switch (c) {
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+				case 'a':
+				case 'b':
+				case 'c':
+				case 'd':
+				case 'e':
+				case 'f':
+					m.appendReplacement(buf, "");
+					working.append(canLink ? linkifyMessage(buf.toString()) : new Text(buf.toString()));
+					if (canColor) {
+						tmp = new Text("").setColor(ChatColor.getByChar(c));
+						working.append(tmp);
+						working = tmp;
+					}
+					break;
+				case 'k':
+					m.appendReplacement(buf, "");
+					working.append(canLink ? linkifyMessage(buf.toString()) : new Text(buf.toString()));
+					if (canColor) {
+						tmp = new Text("").setRandom(true);
+						working.append(tmp);
+						working = tmp;
+					}
+					break;
+				case 'l':
+					m.appendReplacement(buf, "");
+					working.append(canLink ? linkifyMessage(buf.toString()) : new Text(buf.toString()));
+					if (canColor) {
+						tmp = new Text("").setBold(true);
+						working.append(tmp);
+						working = tmp;
+					}
+					break;
+				case 'm':
+					m.appendReplacement(buf, "");
+					working.append(canLink ? linkifyMessage(buf.toString()) : new Text(buf.toString()));
+					if (canColor) {
+						tmp = new Text("").setStrikethrough(true);
+						working.append(tmp);
+						working = tmp;
+					}
+					break;
+				case 'n':
+					m.appendReplacement(buf, "");
+					working.append(canLink ? linkifyMessage(buf.toString()) : new Text(buf.toString()));
+					if (canColor) {
+						tmp = new Text("").setUnderline(true);
+						working.append(tmp);
+						working = tmp;
+					}
+					break;
+				case 'r':
+					m.appendReplacement(buf, "");
+					working.append(canLink ? linkifyMessage(buf.toString()) : new Text(buf.toString()));
+					working = root;
+					break;
+			}
+		}
+		buf = new StringBuffer();
+		m.appendTail(buf);
+		if (buf.toString().length() > 0) {
+			working.append(canLink ? linkifyMessage(buf.toString()) : new Text(buf.toString()));
+		}
+		return root;
+	}
+
+	public static Text linkifyMessage(String msg) {
+		Text text = new Text("");
+		Matcher m = linkPattern.matcher(msg);
+		while(m.find()) {
+			String url = m.group();
+			if (!url.startsWith("http://") && !url.startsWith("https://")) {
+				url = "http://" + url;
+			}
+			StringBuffer buf = new StringBuffer();
+			m.appendReplacement(buf, "");
+			text.append(new Text(buf.toString()));
+			text.append(m.group())
+					.setClick(ClickAction.OPEN_URL, url)
+					.setHover(HoverAction.SHOW_TEXT, new Text("Click to open this url in your web browser."));
+		}
+		StringBuffer buf = new StringBuffer();
+		m.appendTail(buf);
+		text.append(buf.toString());
+		return text;
+	}
+
 
 	public ChatRenderer(RedisChat plugin) {
 		this.plugin = plugin;
@@ -119,11 +234,13 @@ public class ChatRenderer extends BukkitRunnable {
 			prefix.append(ChatColor.GRAY + "[" + ChatColor.RED + "!" + ChatColor.GRAY + "] " + ChatColor.RESET);
 			break;
 		}
-		Text msgText = new Text(msg.getMessage());
+		Text text = new Text("");
+		Player sender = plugin.getServer().getPlayerExact(msg.getSender());
 		if (textColor.length() == 2) {
-			msgText.setColor(ChatColor.getByChar(textColor.charAt(1)));
+			text.setColor(ChatColor.getByChar(textColor.charAt(1)));
 		}
-		prefix.append(ChatColor.DARK_GRAY + "<").append(formatPlayerName(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(msgText);
+		Text formatted = formatChatMessage(msg.getMessage(), text, sender);
+		prefix.append(ChatColor.DARK_GRAY + "<").append(formatPlayerName(msg.getSender())).append(ChatColor.DARK_GRAY + "> ").append(formatted);
 		PacketPlayOutChat packet = new PacketPlayOutChat(prefix, true);
 		return packet;
 	}
@@ -174,6 +291,7 @@ public class ChatRenderer extends BukkitRunnable {
 				break;
 			case PRIVATE:
 				Player recip = plugin.getServer().getPlayerExact(msg.getDestination().substring(1));
+				plugin.notifyPrivateMessage(recip);
 				Player sender = plugin.getServer().getPlayerExact(msg.getSender());
 				recip.setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(plugin, sender.getName()));
 				sender.setMetadata(MetaKeys.PM_REPLY_TO, new FixedMetadataValue(plugin, recip.getName()));

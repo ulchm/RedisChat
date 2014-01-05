@@ -1,8 +1,10 @@
-package com.norcode.bukkit.redischat.command;
+package com.norcode.bukkit.redischat.command.channel;
 
 import com.norcode.bukkit.playerid.PlayerID;
 import com.norcode.bukkit.redischat.Channel;
 import com.norcode.bukkit.redischat.RedisChat;
+import com.norcode.bukkit.redischat.command.BaseCommand;
+import com.norcode.bukkit.redischat.command.CommandError;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;

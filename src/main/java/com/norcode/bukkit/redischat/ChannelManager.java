@@ -1,6 +1,6 @@
 package com.norcode.bukkit.redischat;
 
-import org.bukkit.ChatColor;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import redis.clients.jedis.Jedis;
@@ -12,6 +12,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class ChannelManager {
 
@@ -27,15 +29,47 @@ public class ChannelManager {
 	private void initializeChannels() {
 		Jedis j = plugin.getJedisPool().getResource();
 		Map<String, String> channelData = j.hgetAll("channels");
+		long now = System.currentTimeMillis();
+		long expireAfter = plugin.getConfig().getLong("channel-expiry", TimeUnit.DAYS.toMillis(90));
 		for (Map.Entry<String, String> entry: channelData.entrySet()) {
-			channels.put(entry.getKey().toLowerCase(), plugin.getGson().fromJson(entry.getValue(), Channel.class));
+			final Channel c = plugin.getGson().fromJson(entry.getValue(), Channel.class);
+			if (!c.isNoDelete() && (now - c.getLastJoinedAt() > expireAfter)) {
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						Jedis j = plugin.getJedisPool().getResource();
+						j.hdel("channels", c.getName());
+						plugin.getJedisPool().returnResource(j);
+					}
+				}.runTaskAsynchronously(plugin);
+				continue;
+			}
+			channels.put(entry.getKey().toLowerCase(), c);
 		}
-		if (channels.isEmpty()) {
-			// Setup a default channel.
-			Channel c = new Channel();
-			c.setName("G");
-			c.setNameColor(ChatColor.YELLOW.toString());
-			saveChannel(c);
+		ConfigurationSection defChans = plugin.getConfig().getConfigurationSection("default-channels");
+		for (String name: defChans.getKeys(false)) {
+			if (!channels.containsKey(name.toLowerCase())) {
+				Channel c =  new Channel();
+				c.setName(name);
+				c.setAutoJoin(defChans.getBoolean(name + ".autojoin", false));
+				c.setNoDelete(defChans.getBoolean(name+".nodelete", false));
+				c.setNameColor(defChans.getString(name+".namecolor", ""));
+				c.setTextColor(defChans.getString(name + ".textcolor", ""));
+				c.setListed(defChans.getBoolean(name+".listed", true));
+				c.setChatPermission(defChans.getString(name+".chatpermission"));
+				c.setJoinPermission(defChans.getString(name + ".joinpermission"));
+				c.setDescription(defChans.getString(name+".description"));
+				String uuids = defChans.getString(name+".ownerid");
+				if (uuids != null) {
+					c.setOwnerId(UUID.fromString(uuids));
+				}
+				for (String ids: defChans.getStringList(name+".operators")) {
+					c.getOpIdSet().add(UUID.fromString(ids));
+				}
+				c.setPassword(defChans.getString(name+".password"));
+				c.setRadius(defChans.getInt("radius", -1));
+				saveChannel(c);
+			}
 		}
 	}
 
@@ -60,6 +94,11 @@ public class ChannelManager {
 	}
 
 	public void saveChannel(Channel c) {
+		if (!channels.containsKey(c.getName().toLowerCase())) {
+			// new channel. set creation timestamp
+			c.setCreatedAt(System.currentTimeMillis());
+			c.setLastJoinedAt(c.getCreatedAt());
+		}
 		channels.put(c.getName().toLowerCase(), c);
 		final String name = c.getName();
 		final String encoded = plugin.getGson().toJson(c);
@@ -107,6 +146,8 @@ public class ChannelManager {
 		LinkedList<String> pc = (LinkedList<String>) player.getMetadata(MetaKeys.CHANNEL_LIST).get(0).value();
 		pc.add(0, channel.getName().toLowerCase());
 		channel.getMembers().add(player.getName());
+		channel.setLastJoinedAt(System.currentTimeMillis());
+		plugin.getChannelManager().saveChannel(channel);
 		return true;
 	}
 

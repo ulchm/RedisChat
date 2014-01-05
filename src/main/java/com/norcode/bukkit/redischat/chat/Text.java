@@ -21,6 +21,7 @@ public class Text extends ChatComponentText {
 		return (Text) a(node);
 	}
 
+
 	public Text append(IChatBaseComponent... nodes) {
 		for (IChatBaseComponent node : nodes) {
 			a(node);
@@ -65,7 +66,9 @@ public class Text extends ChatComponentText {
 	}
 
 	public Text setColor(ChatColor color) {
-		getChatModifier().setColor(EnumChatFormat.valueOf(color.name()));
+		if (color != null) {
+			getChatModifier().setColor(EnumChatFormat.valueOf(color.name()));
+		}
 		return this;
 	}
 

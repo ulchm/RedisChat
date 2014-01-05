@@ -25,7 +25,7 @@ permissions:
 
 commands:
   channel:
-    aliases: [ch, chan]
+    aliases: [chan]
     permission: redischat.command.channel
   msg:
     aliases: [tell, whisper, pm]
@@ -33,3 +33,5 @@ commands:
   reply:
     aliases: [r]
     permission: redischat.command.reply
+  chat:
+    permission: redischat.command.chat

@@ -1,15 +1,17 @@
 package com.norcode.bukkit.redischat;
 
 import com.norcode.bukkit.playerid.PlayerID;
-import com.norcode.bukkit.redischat.command.ChannelCommand;
 import com.norcode.bukkit.redischat.command.PrivateMessageCommand;
 import com.norcode.bukkit.redischat.command.ReplyCommand;
+import com.norcode.bukkit.redischat.command.channel.ChannelCommand;
+import com.norcode.bukkit.redischat.command.chat.ChatCommand;
 import com.norcode.bukkit.redischat.listeners.PubSubListener;
 import net.minecraft.server.v1_7_R1.ChatBaseComponent;
 import net.minecraft.server.v1_7_R1.IChatBaseComponent;
 import net.minecraft.server.v1_7_R1.PacketPlayOutChat;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.craftbukkit.libs.com.google.gson.Gson;
@@ -43,6 +45,7 @@ public class RedisChat extends JavaPlugin implements Listener {
 	private ChatRenderer chatRenderer;
 	private ChannelManager channelManager;
 	private ChannelCommand channelCommand;
+	private ChatCommand chatCommand;
 	private PrivateMessageCommand pmCommand;
 	private ReplyCommand replyCommand;
 
@@ -51,15 +54,21 @@ public class RedisChat extends JavaPlugin implements Listener {
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
-
+		setupConfig();
 		chatRenderer = new ChatRenderer(this);
 		chatRenderer.runTaskTimer(this, 1, 1);
 		channelManager = new ChannelManager(this);
 		channelCommand = new ChannelCommand(this);
+		chatCommand = new ChatCommand(this);
 		replyCommand = new ReplyCommand(this);
 		pmCommand = new PrivateMessageCommand(this);
 		Thread listenerThread = new Thread(pubSubListener);
 		listenerThread.start();
+	}
+
+	private void setupConfig() {
+		saveDefaultConfig();
+		debugMode = getConfig().getBoolean("debug-mode", false);
 	}
 
 	public static void debug(Object o) {
@@ -255,5 +264,17 @@ public class RedisChat extends JavaPlugin implements Listener {
 
 	public ChannelManager getChannelManager() {
 		return channelManager;
+	}
+
+	public void notifyPrivateMessage(Player p) {
+		if (!p.hasMetadata(MetaKeys.PM_NOTIFICATION)) {
+			ConfigurationSection cfg = PlayerID.getPlayerData(getName(), p);
+			String soundName = cfg.getString(MetaKeys.PM_NOTIFICATION, Sound.ANVIL_LAND.name());
+			p.setMetadata(MetaKeys.PM_NOTIFICATION, new FixedMetadataValue(this, Sound.valueOf(soundName)));
+		}
+		Sound snd = (Sound) p.getMetadata(MetaKeys.PM_NOTIFICATION).get(0).value();
+		if (snd != null) {
+			p.playSound(p.getLocation(), snd, 10, 1);
+		}
 	}
 }
