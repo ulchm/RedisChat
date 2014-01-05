@@ -1,0 +1,12 @@
+debug-mode: true
+channel-expiry: 90d
+default-channels:
+  G:
+    autojoin: true
+    nodelete: true
+    description: The global chat channel
+  A:
+    autojoin: true
+    nodelete: true
+    description: Admin Chat
+    joinpermission: group.admin
