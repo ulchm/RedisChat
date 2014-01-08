@@ -1,4 +1,4 @@
 RedisChat
 =========
 
-Minecraft chat plugin built using redis.
+Minecraft chat plugin built using redis.  
