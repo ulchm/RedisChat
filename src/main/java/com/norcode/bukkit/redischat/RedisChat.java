@@ -1,6 +1,6 @@
 package com.norcode.bukkit.redischat;
 
-import com.norcode.bukkit.playerid.PlayerID;
+import com.norcode.bukkit.metalcore.MetalCorePlugin;
 import com.norcode.bukkit.redischat.command.PrivateMessageCommand;
 import com.norcode.bukkit.redischat.command.ReplyCommand;
 import com.norcode.bukkit.redischat.command.channel.ChannelCommand;
@@ -36,7 +36,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class RedisChat extends JavaPlugin implements Listener {
+public class RedisChat extends MetalCorePlugin implements Listener {
 
 	int LOCAL_RADIUS = 64;
 	private JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, 0);
@@ -53,7 +53,8 @@ public class RedisChat extends JavaPlugin implements Listener {
 
 	@Override
 	public void onEnable() {
-		getServer().getPluginManager().registerEvents(this, this);
+        super.onEnable();
+        getServer().getPluginManager().registerEvents(this, this);
 		setupConfig();
 		chatRenderer = new ChatRenderer(this);
 		chatRenderer.runTaskTimer(this, 1, 1);
@@ -64,7 +65,7 @@ public class RedisChat extends JavaPlugin implements Listener {
 		pmCommand = new PrivateMessageCommand(this);
 		Thread listenerThread = new Thread(pubSubListener);
 		listenerThread.start();
-	}
+    }
 
 	private void setupConfig() {
 		saveDefaultConfig();
@@ -79,13 +80,10 @@ public class RedisChat extends JavaPlugin implements Listener {
 
 	@Override
 	public void onDisable() {
+        super.onDisable();
 		pubSubListener.stopRunning();
 		chatRenderer.cancel();
-	}
-
-	public JedisPool getJedisPool() {
-		return jedisPool;
-	}
+    }
 
 	@EventHandler(ignoreCancelled = true, priority= EventPriority.MONITOR)
 	public void asyncPlayerChatEvent(final AsyncPlayerChatEvent event) {
@@ -186,13 +184,12 @@ public class RedisChat extends JavaPlugin implements Listener {
 		List<String> channelList;
 		if (!event.getPlayer().hasMetadata(MetaKeys.CHANNEL_LIST)) {
 			event.getPlayer().setMetadata(MetaKeys.CHANNEL_LIST, new FixedMetadataValue(this, new LinkedList<String>()));
-			ConfigurationSection cfg = PlayerID.getPlayerData(getName(), event.getPlayer());
+			ConfigurationSection cfg = this.getPlayerData(event.getPlayer());
 			List<String> channels;
 			if (!cfg.contains(MetaKeys.CHANNEL_LIST)) {
 				channels = new ArrayList<String>();
 				channels.add("G");
 				cfg.set(MetaKeys.CHANNEL_LIST, channels);
-				PlayerID.savePlayerData(getName(), event.getPlayer(), cfg);
 			}
 			channels = cfg.getStringList(MetaKeys.CHANNEL_LIST);
 			channelList = new ArrayList<String>(channels);
@@ -268,7 +265,7 @@ public class RedisChat extends JavaPlugin implements Listener {
 
 	public void notifyPrivateMessage(Player p) {
 		if (!p.hasMetadata(MetaKeys.PM_NOTIFICATION)) {
-			ConfigurationSection cfg = PlayerID.getPlayerData(getName(), p);
+			ConfigurationSection cfg = this.getPlayerData(p);
 			String soundName = cfg.getString(MetaKeys.PM_NOTIFICATION, Sound.ANVIL_LAND.name());
 			p.setMetadata(MetaKeys.PM_NOTIFICATION, new FixedMetadataValue(this, Sound.valueOf(soundName)));
 		}

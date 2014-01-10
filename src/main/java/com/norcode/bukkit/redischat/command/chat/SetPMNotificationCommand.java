@@ -1,6 +1,5 @@
 package com.norcode.bukkit.redischat.command.chat;
 
-import com.norcode.bukkit.playerid.PlayerID;
 import com.norcode.bukkit.redischat.MetaKeys;
 import com.norcode.bukkit.redischat.RedisChat;
 import com.norcode.bukkit.redischat.command.CommandError;
@@ -28,9 +27,8 @@ public class SetPMNotificationCommand extends ChatSetCommand.ChatSetSubCommand {
 				throw new CommandError("Unknown Sound: " + args.peek());
 			}
 		}
-		ConfigurationSection cfg = PlayerID.getPlayerData(plugin.getName(), p);
+		ConfigurationSection cfg = plugin.getPlayerData(p);
 		cfg.set(MetaKeys.PM_NOTIFICATION, snd == null ? "" : snd.name());
-		PlayerID.savePlayerData(plugin.getName(), p, cfg);
 		p.setMetadata(MetaKeys.PM_NOTIFICATION, new FixedMetadataValue(plugin, snd));
 		String info = "cleared.";
 		if (snd != null) {

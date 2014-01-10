@@ -1,6 +1,6 @@
 package com.norcode.bukkit.redischat.command.channel;
 
-import com.norcode.bukkit.playerid.PlayerID;
+import com.norcode.bukkit.metalcore.MetalCorePlugin;
 import com.norcode.bukkit.redischat.Channel;
 import com.norcode.bukkit.redischat.RedisChat;
 import com.norcode.bukkit.redischat.command.BaseCommand;
@@ -43,7 +43,7 @@ public class ChannelOpCommand extends BaseCommand {
 			Channel c = plugin.getChannelManager().getFocusedChannel((Player) commandSender);
 			String msg = "Operators for #" + c.getName() + ": ";
 			for (UUID uuid: c.getOpIdSet()) {
-				msg += PlayerID.getPlayerName(uuid) + ", ";
+				msg += MetalCorePlugin.getDatastore().getPlayerName(uuid) + ", ";
 			}
 			if (msg.endsWith(", ")) {
 				msg = msg.substring(0, msg.length()-2);

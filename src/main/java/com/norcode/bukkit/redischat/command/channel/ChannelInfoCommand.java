@@ -1,6 +1,6 @@
 package com.norcode.bukkit.redischat.command.channel;
 
-import com.norcode.bukkit.playerid.PlayerID;
+import com.norcode.bukkit.metalcore.MetalCorePlugin;
 import com.norcode.bukkit.redischat.Channel;
 import com.norcode.bukkit.redischat.RedisChat;
 import com.norcode.bukkit.redischat.command.BaseCommand;
@@ -36,7 +36,7 @@ public class ChannelInfoCommand extends BaseCommand {
 		}
 		commandSender.sendMessage("Channel Name: " + ChatColor.GOLD + channel.getName());
 		commandSender.sendMessage("Password: " + (channel.getPassword() == null ? "none" : channel.getPassword()));
-		commandSender.sendMessage("Owner: " + (channel.getOwnerId() == null ? "Nobody" : PlayerID.getOfflinePlayer(channel.getOwnerId()).getName()));
+		commandSender.sendMessage("Owner: " + (channel.getOwnerId() == null ? "Nobody" : MetalCorePlugin.getDatastore().getOfflinePlayer(channel.getOwnerId()).getName()));
 		commandSender.sendMessage("Listed?: " + channel.isListed());
 		commandSender.sendMessage("Join Permission: " + (channel.getJoinPermission() == null ? "none" : channel.getJoinPermission()));
 		commandSender.sendMessage("Chat Permission: " + (channel.getChatPermission() == null ? "none" : channel.getChatPermission()));
